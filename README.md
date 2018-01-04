@@ -1,57 +1,21 @@
-# Project Name
+---
+services: batch
+platforms: python
+author: dlepow
+---
 
-(short, 1-3 sentenced, description of the project)
+# Azure Batch Python Quickstart
 
-## Features
+A basic .NET application that introduces Batch features such as pools, nodes, jobs, tasks, and interation with Storage.
 
-This project framework provides the following features:
+For details and explanation, see the accompanying article [Run your first Batch job using the Python API](https://docs.microsoft.com/azure/batch/quick-run-Python).
 
-* Feature 1
-* Feature 2
-* ...
+## Prerequisites
 
-## Getting Started
-
-### Prerequisites
-
-(ideally very short, if any)
-
-- OS
-- Library version
-- ...
-
-### Installation
-
-(ideally very short)
-
-- npm install [package name]
-- mvn install
-- ...
-
-### Quickstart
-(Add steps to get up and running quickly)
-
-1. git clone [repository clone url]
-2. cd [respository name]
-3. ...
-
-
-## Demo
-
-A demo app is included to show how to use the project.
-
-To run the demo, follow these steps:
-
-(Add steps to start up the demo)
-
-1.
-2.
-3.
+- Azure Batch account and linked general-purpose Azure Storage account
+- Python 2.7 or 3.3 or later
 
 ## Resources
 
-(Any additional resources or related projects)
-
-- Link to supporting information
-- Link to similar sample
-- ...
+- [Azure Batch documentation](https://docs.microsoft.com/azure/batch/)
+- [Azure Batch and HPC code samples](https://github.com/Azure/azure-batch-samples)
