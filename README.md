@@ -1,5 +1,5 @@
 ---
-services: batch
+services: batch, storage
 platforms: python
 author: dlepow
 ---
