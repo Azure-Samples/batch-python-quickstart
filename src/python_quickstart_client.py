@@ -1,5 +1,5 @@
 #
-# Companion project to the following article:
+# Companion script to the following article:
 # https://docs.microsoft.com/azure/batch/quick-run-python
 
 
@@ -32,7 +32,6 @@ sys.path.append('..')
 _BATCH_ACCOUNT_NAME =''
 _BATCH_ACCOUNT_KEY = ''
 _BATCH_ACCOUNT_URL = ''
-
 _STORAGE_ACCOUNT_NAME = ''
 _STORAGE_ACCOUNT_KEY = ''
 _POOL_ID = 'PythonQuickstartPool'
@@ -168,8 +167,6 @@ def create_pool(batch_service_client, pool_id):
     # Marketplace image. For more information about creating pools of Linux
     # nodes, see:
     # https://azure.microsoft.com/documentation/articles/batch-linux-nodes/
-
-  
     new_pool = batch.models.PoolAddParameter(
         id=pool_id,
         virtual_machine_configuration=batchmodels.VirtualMachineConfiguration(
@@ -182,12 +179,9 @@ def create_pool(batch_service_client, pool_id):
         node_agent_sku_id="batch.node.ubuntu 16.04"),
         vm_size=_POOL_VM_SIZE,
         target_dedicated_nodes=_POOL_NODE_COUNT
-)
-    try:
-        batch_service_client.pool.add(new_pool)
-    except batchmodels.batch_error.BatchErrorException as err:
-        print_batch_exception(err)
-        raise
+    )
+    batch_service_client.pool.add(new_pool)
+    
 
 
 def create_job(batch_service_client, job_id, pool_id):
@@ -205,11 +199,7 @@ def create_job(batch_service_client, job_id, pool_id):
         job_id,
         batch.models.PoolInformation(pool_id=pool_id))
 
-    try:
-        batch_service_client.job.add(job)
-    except batchmodels.batch_error.BatchErrorException as err:
-        print_batch_exception(err)
-        raise
+    batch_service_client.job.add(job)
 
 
 def add_tasks(batch_service_client, job_id, input_files):
@@ -289,15 +279,13 @@ def print_task_output(batch_service_client, job_id, encoding=None):
 
     tasks = batch_service_client.task.list(job_id)
 
-    task_ids = [task.id for task in tasks]
+    for task in tasks:
 
-    for task_id in task_ids:
-
-        node_id = batch_service_client.task.get(job_id, task_id).node_info.node_id
-        print("Task: {}".format(task_id))
+        node_id = batch_service_client.task.get(job_id, task.id).node_info.node_id
+        print("Task: {}".format(task.id))
         print("Node: {}".format(node_id))
 
-        stream = batch_service_client.file.get_from_task(job_id, task_id, _STANDARD_OUT_FILE_NAME)
+        stream = batch_service_client.file.get_from_task(job_id, task.id, _STANDARD_OUT_FILE_NAME)
 
         file_text = _read_stream_as_string(
             stream,
@@ -368,32 +356,37 @@ if __name__ == '__main__':
         credentials,
         base_url=_BATCH_ACCOUNT_URL)
 
-    # Create the pool that will contain the compute nodes that will execute the
-    # tasks. 
-    create_pool(batch_client, _POOL_ID)
+     
 
-    # Create the job that will run the tasks.
-    create_job(batch_client, _JOB_ID, _POOL_ID)
+    try:
+        # Create the pool that will contain the compute nodes that will execute the
+        # tasks.
+        create_pool(batch_client, _POOL_ID)
+        
+        # Create the job that will run the tasks.
+        create_job(batch_client, _JOB_ID, _POOL_ID)
 
-    # Add the tasks to the job. 
-    add_tasks(batch_client, _JOB_ID, input_files)
+        # Add the tasks to the job. 
+        add_tasks(batch_client, _JOB_ID, input_files)
 
-    # Pause execution until tasks reach Completed state.
-    wait_for_tasks_to_complete(batch_client,
+        # Pause execution until tasks reach Completed state.
+        wait_for_tasks_to_complete(batch_client,
                                _JOB_ID,
                                datetime.timedelta(minutes=30))
 
-    print("  Success! All tasks reached the 'Completed' state within the "
+        print("  Success! All tasks reached the 'Completed' state within the "
           "specified timeout period.")
 
+        # Print the stdout.txt and stderr.txt files for each task to the console
+        print_task_output(batch_client, _JOB_ID)
 
-    # Print the stdout.txt and stderr.txt files for each task to the console
-    print_task_output(batch_client, _JOB_ID)
+    except batchmodels.batch_error.BatchErrorException as err:
+        print_batch_exception(err)
+        raise
 
     # Clean up storage resources
-    print('Deleting containers...')
+    print('Deleting container [{}]...'.format(input_container_name))
     blob_client.delete_container(input_container_name)
-    
 
     # Print out some timing info
     end_time = datetime.datetime.now().replace(microsecond=0)
