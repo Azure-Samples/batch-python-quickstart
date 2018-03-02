@@ -6,7 +6,7 @@ author: dlepow
 
 # Azure Batch Python Quickstart
 
-A basic .NET application that introduces Batch features such as pools, nodes, jobs, tasks, and interaction with Storage. Each task writes a text file to standard output.
+A basic Python application that introduces Batch features such as pools, nodes, jobs, tasks, and interaction with Storage. Each task writes a text file to standard output.
 
 For details and explanation, see the accompanying article [Run your first Batch job with the Python API](https://docs.microsoft.com/azure/batch/quick-run-python).
 
