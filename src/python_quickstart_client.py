@@ -168,7 +168,7 @@ def create_pool(batch_service_client, pool_id):
             image_reference=batchmodels.ImageReference(
         	        publisher="Canonical",
         	        offer="UbuntuServer",
-        	        sku="16.04.0-LTS",
+        	        sku="16.04-LTS",
         	        version="latest"
                 ),
         node_agent_sku_id="batch.node.ubuntu 16.04"),
