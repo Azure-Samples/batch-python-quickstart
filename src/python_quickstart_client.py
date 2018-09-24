@@ -12,7 +12,7 @@ except NameError:
 
 import azure.storage.blob as azureblob
 import azure.batch.batch_service_client as batch
-import azure.batch.batch_auth as batchauth
+import azure.batch.batch_auth as batch_auth
 import azure.batch.models as batchmodels
 
 sys.path.append('.')
@@ -154,7 +154,7 @@ def create_pool(batch_service_client, pool_id):
     :param str pool_id: An ID for the new pool.
     :param str publisher: Marketplace image publisher
     :param str offer: Marketplace image offer
-    :param str sku: Marketplace image sky
+    :param str sku: Marketplace image sku
     """
     print('Creating pool [{}]...'.format(pool_id))
 
@@ -191,11 +191,10 @@ def create_job(batch_service_client, job_id, pool_id):
     print('Creating job [{}]...'.format(job_id))
 
     job = batch.models.JobAddParameter(
-        job_id,
-        batch.models.PoolInformation(pool_id=pool_id))
+        id=job_id,
+        pool_info=batch.models.PoolInformation(pool_id=pool_id))
 
     batch_service_client.job.add(job)
-
 
 def add_tasks(batch_service_client, job_id, input_files):
     """
@@ -332,9 +331,9 @@ if __name__ == '__main__':
        
 
     # The collection of data files that are to be processed by the tasks.
-    input_file_paths = [os.path.realpath('./taskdata0.txt'),
-                        os.path.realpath('./taskdata1.txt'),
-                        os.path.realpath('./taskdata2.txt')]
+    input_file_paths =  [os.path.join(sys.path[0], 'taskdata0.txt'),
+                         os.path.join(sys.path[0], 'taskdata1.txt'),
+                         os.path.join(sys.path[0], 'taskdata2.txt')]
 
     # Upload the data files. 
     input_files = [
@@ -344,7 +343,7 @@ if __name__ == '__main__':
 
     # Create a Batch service client. We'll now be interacting with the Batch
     # service in addition to Storage
-    credentials = batchauth.SharedKeyCredentials(_BATCH_ACCOUNT_NAME,
+    credentials = batch_auth.SharedKeyCredentials(_BATCH_ACCOUNT_NAME,
                                                  _BATCH_ACCOUNT_KEY)
 
     batch_client = batch.BatchServiceClient(
@@ -375,7 +374,7 @@ if __name__ == '__main__':
         # Print the stdout.txt and stderr.txt files for each task to the console
         print_task_output(batch_client, _JOB_ID)
 
-    except batchmodels.batch_error.BatchErrorException as err:
+    except batchmodels.BatchErrorException as err:
         print_batch_exception(err)
         raise
 
