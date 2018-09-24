@@ -175,7 +175,7 @@ def create_pool(batch_service_client, pool_id):
         vm_size=_POOL_VM_SIZE,
         target_dedicated_nodes=_POOL_NODE_COUNT
     )
-    batch_client.pool.add(new_pool)
+    batch_service_client.pool.add(new_pool)
     
 
 
