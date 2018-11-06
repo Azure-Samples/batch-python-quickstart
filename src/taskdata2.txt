@@ -2,6 +2,6 @@
 
 Storage keeps pace with your growing data needs, delivering petabytes of storage for the largest scenarios. Whether you're building modern applications or a high-scale big data application, Storage can handle it.
 
-Storage is available in more regions than other public cloud offering, letting you store your data where it makes the most business sense. Scale up or across data centers as needed, and be closer to your customers for faster access and better performance.
+Storage is available in more regions than any other public cloud offering, letting you store your data where it makes the most business sense. Scale up or across data centers as needed, and be closer to your customers for faster access and better performance.
 
 Storage automatically replicates your data and maintains multiple copies—either in a single region or globally with geo-redundancy—to help guard against unexpected hardware failures.
