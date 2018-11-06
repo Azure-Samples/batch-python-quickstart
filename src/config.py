@@ -11,15 +11,15 @@
 # places, or events is intended or should be inferred.
 #--------------------------------------------------------------------------
 
-# Global conatant variables (Azure Storage account/Batch details)
+# Global constant variables (Azure Storage account/Batch details)
 
 # import "config.py" in "python_quickstart_client.py "
 
 _BATCH_ACCOUNT_NAME ='' # Your batch account name 
 _BATCH_ACCOUNT_KEY = '' # Your batch account key
 _BATCH_ACCOUNT_URL = '' # Your batch account URL
-_STORAGE_ACCOUNT_NAME = '' # Your
-_STORAGE_ACCOUNT_KEY = '' # Your
+_STORAGE_ACCOUNT_NAME = '' # Your storage account name
+_STORAGE_ACCOUNT_KEY = '' # Your storage account key
 _POOL_ID = 'PythonQuickstartPool' # Your Pool ID
 _POOL_NODE_COUNT = 2 # Pool node count
 _POOL_VM_SIZE = 'STANDARD_A1_v2' # VM Type/Size

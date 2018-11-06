@@ -19,22 +19,9 @@ sys.path.append('.')
 sys.path.append('..')
 
 
-# Update the Batch and Storage account credential strings below with the values
+# Update the Batch and Storage account credential strings in config.py with values
 # unique to your accounts. These are used when constructing connection strings
 # for the Batch and Storage client objects.
-
-# global
-_BATCH_ACCOUNT_NAME =''
-_BATCH_ACCOUNT_KEY = ''
-_BATCH_ACCOUNT_URL = ''
-_STORAGE_ACCOUNT_NAME = ''
-_STORAGE_ACCOUNT_KEY = ''
-_POOL_ID = 'PythonQuickstartPool'
-_POOL_NODE_COUNT = 2
-_POOL_VM_SIZE = 'STANDARD_A1_v2'
-_JOB_ID = 'PythonQuickstartJob'
-_STANDARD_OUT_FILE_NAME = 'stdout.txt'
-
 
 def query_yes_no(question, default="yes"):
     """
