@@ -103,8 +103,7 @@ def upload_file_to_container(block_blob_client, container_name, file_path):
                                               blob_name,
                                               sas_token=sas_token)
 
-    return batchmodels.ResourceFile(file_path=blob_name,
-                                    blob_source=sas_url)
+    return batchmodels.ResourceFile(http_url=sas_url, file_path=blob_name)
 
 
 def get_container_sas_token(block_blob_client,
@@ -335,7 +334,7 @@ if __name__ == '__main__':
 
     batch_client = batch.BatchServiceClient(
         credentials,
-        base_url=config._BATCH_ACCOUNT_URL)
+        batch_url=config._BATCH_ACCOUNT_URL)
 
      
 
