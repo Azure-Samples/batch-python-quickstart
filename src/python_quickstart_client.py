@@ -10,6 +10,7 @@ try:
 except NameError:
     pass
 
+from azure.common.credentials import ServicePrincipalCredentials
 import azure.storage.blob as azureblob
 import azure.batch.batch_service_client as batch
 import azure.batch.batch_auth as batch_auth
@@ -329,14 +330,22 @@ if __name__ == '__main__':
 
     # Create a Batch service client. We'll now be interacting with the Batch
     # service in addition to Storage
-    credentials = batch_auth.SharedKeyCredentials(config._BATCH_ACCOUNT_NAME,
-                                                 config._BATCH_ACCOUNT_KEY)
+    print("Using {0} based authentication for Batch service".format(config._AUTH_MODE))
+
+    if config._AUTH_MODE == 'Key':
+        credentials = batch_auth.SharedKeyCredentials(config._BATCH_ACCOUNT_NAME,
+                                                config._BATCH_ACCOUNT_KEY)
+    elif config._AUTH_MODE == 'ServicePrincipal':
+        credentials = ServicePrincipalCredentials(
+            client_id=config._AD_CLIENT_ID,
+            secret=config._AD_SECRET,
+            tenant=config._AD_TENANT,
+            resource="https://batch.core.windows.net/"
+        )
 
     batch_client = batch.BatchServiceClient(
         credentials,
         batch_url=config._BATCH_ACCOUNT_URL)
-
-     
 
     try:
         # Create the pool that will contain the compute nodes that will execute the

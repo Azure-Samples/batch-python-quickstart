@@ -15,9 +15,13 @@
 
 # import "config.py" in "python_quickstart_client.py "
 
+_AUTH_MODE = 'Key' # VALUE SHOULD BE 'Key' OR 'ServicePrincipal'
 _BATCH_ACCOUNT_NAME ='' # Your batch account name 
-_BATCH_ACCOUNT_KEY = '' # Your batch account key
+_BATCH_ACCOUNT_KEY = '' # Your batch account key, only used for 'Key' _AUTH_MODE
 _BATCH_ACCOUNT_URL = '' # Your batch account URL
+_AD_CLIENT_ID = '' # Your Active Directory CLIENT_ID, only used for 'ServicePrincipal' _AUTH_MODE
+_AD_TENANT = '' # Your Active Directory TENANT, only used for 'ServicePrincipal' _AUTH_MODE
+_AD_SECRET = '' # Your Active Directory SECRET, only used for 'ServicePrincipal' _AUTH_MODE
 _STORAGE_ACCOUNT_NAME = '' # Your storage account name
 _STORAGE_ACCOUNT_KEY = '' # Your storage account key
 _POOL_ID = 'PythonQuickstartPool' # Your Pool ID
