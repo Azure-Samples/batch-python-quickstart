@@ -152,17 +152,16 @@ def create_pool(batch_service_client, pool_id):
         id=pool_id,
         virtual_machine_configuration=batchmodels.VirtualMachineConfiguration(
             image_reference=batchmodels.ImageReference(
-        	        publisher="Canonical",
-        	        offer="UbuntuServer",
-        	        sku="18.04-LTS",
-        	        version="latest"
-                ),
-        node_agent_sku_id="batch.node.ubuntu 18.04"),
+                publisher="Canonical",
+                offer="UbuntuServer",
+                sku="18.04-LTS",
+                version="latest"
+            ),
+            node_agent_sku_id="batch.node.ubuntu 18.04"),
         vm_size=config._POOL_VM_SIZE,
         target_dedicated_nodes=config._POOL_NODE_COUNT
     )
     batch_service_client.pool.add(new_pool)
-    
 
 
 def create_job(batch_service_client, job_id, pool_id):
@@ -182,6 +181,7 @@ def create_job(batch_service_client, job_id, pool_id):
 
     batch_service_client.job.add(job)
 
+
 def add_tasks(batch_service_client, job_id, input_files):
     """
     Adds a task for each input file in the collection to the specified job.
@@ -199,19 +199,18 @@ def add_tasks(batch_service_client, job_id, input_files):
 
     tasks = list()
 
-    for idx, input_file in enumerate(input_files): 
+    for idx, input_file in enumerate(input_files):
 
         command = "/bin/bash -c \"cat {}\"".format(input_file.file_path)
         tasks.append(batch.models.TaskAddParameter(
-                id='Task{}'.format(idx),
-                command_line=command,
-                resource_files=[input_file]
-                )
+            id='Task{}'.format(idx),
+            command_line=command,
+            resource_files=[input_file]
+        )
         )
 
     batch_service_client.task.add_collection(job_id, tasks)
 
-    
 
 def wait_for_tasks_to_complete(batch_service_client, job_id, timeout):
     """
@@ -254,24 +253,27 @@ def print_task_output(batch_service_client, job_id, encoding=None):
     :type batch_client: `batchserviceclient.BatchServiceClient`
     :param str job_id: The id of the job with task output files to print.
     """
-    
+
     print('Printing task output...')
 
     tasks = batch_service_client.task.list(job_id)
 
     for task in tasks:
 
-        node_id = batch_service_client.task.get(job_id, task.id).node_info.node_id
+        node_id = batch_service_client.task.get(
+            job_id, task.id).node_info.node_id
         print("Task: {}".format(task.id))
         print("Node: {}".format(node_id))
 
-        stream = batch_service_client.file.get_from_task(job_id, task.id, config._STANDARD_OUT_FILE_NAME)
+        stream = batch_service_client.file.get_from_task(
+            job_id, task.id, config._STANDARD_OUT_FILE_NAME)
 
         file_text = _read_stream_as_string(
             stream,
             encoding)
         print("Standard output:")
         print(file_text)
+
 
 def _read_stream_as_string(stream, encoding):
     """Read stream as string
@@ -293,7 +295,6 @@ def _read_stream_as_string(stream, encoding):
     raise RuntimeError('could not write data to stream or decode bytes')
 
 
-
 if __name__ == '__main__':
 
     start_time = datetime.datetime.now().replace(microsecond=0)
@@ -303,59 +304,53 @@ if __name__ == '__main__':
     # Create the blob client, for use in obtaining references to
     # blob storage containers and uploading files to containers.
 
-    
     blob_client = azureblob.BlockBlobService(
         account_name=config._STORAGE_ACCOUNT_NAME,
         account_key=config._STORAGE_ACCOUNT_KEY)
 
     # Use the blob client to create the containers in Azure Storage if they
     # don't yet exist.
- 
+
     input_container_name = 'input'
     blob_client.create_container(input_container_name, fail_on_exist=False)
 
-       
-
     # The collection of data files that are to be processed by the tasks.
-    input_file_paths =  [os.path.join(sys.path[0], 'taskdata0.txt'),
-                         os.path.join(sys.path[0], 'taskdata1.txt'),
-                         os.path.join(sys.path[0], 'taskdata2.txt')]
+    input_file_paths = [os.path.join(sys.path[0], 'taskdata0.txt'),
+                        os.path.join(sys.path[0], 'taskdata1.txt'),
+                        os.path.join(sys.path[0], 'taskdata2.txt')]
 
-    # Upload the data files. 
+    # Upload the data files.
     input_files = [
         upload_file_to_container(blob_client, input_container_name, file_path)
         for file_path in input_file_paths]
 
-
     # Create a Batch service client. We'll now be interacting with the Batch
     # service in addition to Storage
     credentials = batch_auth.SharedKeyCredentials(config._BATCH_ACCOUNT_NAME,
-                                                 config._BATCH_ACCOUNT_KEY)
+                                                  config._BATCH_ACCOUNT_KEY)
 
     batch_client = batch.BatchServiceClient(
         credentials,
         batch_url=config._BATCH_ACCOUNT_URL)
 
-     
-
     try:
         # Create the pool that will contain the compute nodes that will execute the
         # tasks.
         create_pool(batch_client, config._POOL_ID)
-        
+
         # Create the job that will run the tasks.
         create_job(batch_client, config._JOB_ID, config._POOL_ID)
 
-        # Add the tasks to the job. 
+        # Add the tasks to the job.
         add_tasks(batch_client, config._JOB_ID, input_files)
 
         # Pause execution until tasks reach Completed state.
         wait_for_tasks_to_complete(batch_client,
-                               config._JOB_ID,
-                               datetime.timedelta(minutes=30))
+                                   config._JOB_ID,
+                                   datetime.timedelta(minutes=30))
 
         print("  Success! All tasks reached the 'Completed' state within the "
-          "specified timeout period.")
+              "specified timeout period.")
 
         # Print the stdout.txt and stderr.txt files for each task to the console
         print_task_output(batch_client, config._JOB_ID)
