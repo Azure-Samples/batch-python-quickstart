@@ -10,13 +10,17 @@ try:
 except NameError:
     pass
 
-import azure.storage.blob as azureblob
-import azure.batch.batch_service_client as batch
-import azure.batch.batch_auth as batch_auth
-import azure.batch.models as batchmodels
+from azure.core.exceptions import ResourceExistsError
 
-sys.path.append('.')
-sys.path.append('..')
+from azure.storage.blob import (
+    BlobServiceClient,
+    BlobSasPermissions,
+    generate_blob_sas
+)
+
+from azure.batch import BatchServiceClient
+from azure.batch.batch_auth import SharedKeyCredentials
+import azure.batch.models as batchmodels
 
 
 # Update the Batch and Storage account credential strings in config.py with values
@@ -72,12 +76,12 @@ def print_batch_exception(batch_exception):
     print('-------------------------------------------')
 
 
-def upload_file_to_container(block_blob_client, container_name, file_path):
+def upload_file_to_container(blob_service_client, container_name, file_path):
     """
     Uploads a local file to an Azure Blob storage container.
 
-    :param block_blob_client: A blob service client.
-    :type block_blob_client: `azure.storage.blob.BlockBlobService`
+    :param blob_service_client: A blob service client.
+    :type blob_service_client: `azure.storage.blob.BlobServiceClient`
     :param str container_name: The name of the Azure Blob storage container.
     :param str file_path: The local path to the file.
     :rtype: `azure.batch.models.ResourceFile`
@@ -85,50 +89,47 @@ def upload_file_to_container(block_blob_client, container_name, file_path):
     tasks.
     """
     blob_name = os.path.basename(file_path)
+    blob_client = blob_service_client.get_blob_client(container_name, blob_name)
 
     print('Uploading file {} to container [{}]...'.format(file_path,
                                                           container_name))
 
-    block_blob_client.create_blob_from_path(container_name,
-                                            blob_name,
-                                            file_path)
+    with open(file_path, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
 
-    sas_token = block_blob_client.generate_blob_shared_access_signature(
+    sas_token = generate_blob_sas(
+        config._STORAGE_ACCOUNT_NAME,
         container_name,
         blob_name,
-        permission=azureblob.BlobPermissions.READ,
-        expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=2))
+        account_key=config._STORAGE_ACCOUNT_KEY,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+    )
 
-    sas_url = block_blob_client.make_blob_url(container_name,
-                                              blob_name,
-                                              sas_token=sas_token)
+    sas_url = generate_sas_url(
+        config._STORAGE_ACCOUNT_NAME,
+        config._STORAGE_ACCOUNT_DOMAIN,
+        container_name,
+        blob_name,
+        sas_token
+    )
 
-    return batchmodels.ResourceFile(http_url=sas_url, file_path=blob_name)
+    return batchmodels.ResourceFile(
+        http_url=sas_url,
+        file_path=blob_name
+    )
 
 
-def get_container_sas_token(block_blob_client,
-                            container_name, blob_permissions):
-    """
-    Obtains a shared access signature granting the specified permissions to the
-    container.
-
-    :param block_blob_client: A blob service client.
-    :type block_blob_client: `azure.storage.blob.BlockBlobService`
-    :param str container_name: The name of the Azure Blob storage container.
-    :param BlobPermissions blob_permissions:
-    :rtype: str
-    :return: A SAS token granting the specified permissions to the container.
-    """
-    # Obtain the SAS token for the container, setting the expiry time and
-    # permissions. In this case, no start time is specified, so the shared
-    # access signature becomes valid immediately.
-    container_sas_token = \
-        block_blob_client.generate_container_shared_access_signature(
-            container_name,
-            permission=blob_permissions,
-            expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=2))
-
-    return container_sas_token
+def generate_sas_url(
+    account_name, account_domain, container_name, blob_name, sas_token
+):
+    return "https://{}.{}/{}/{}?{}".format(
+        account_name,
+        account_domain,
+        container_name,
+        blob_name,
+        sas_token
+    )
 
 
 def create_pool(batch_service_client, pool_id):
@@ -148,16 +149,16 @@ def create_pool(batch_service_client, pool_id):
     # Marketplace image. For more information about creating pools of Linux
     # nodes, see:
     # https://azure.microsoft.com/documentation/articles/batch-linux-nodes/
-    new_pool = batch.models.PoolAddParameter(
+    new_pool = batchmodels.PoolAddParameter(
         id=pool_id,
         virtual_machine_configuration=batchmodels.VirtualMachineConfiguration(
             image_reference=batchmodels.ImageReference(
-                publisher="Canonical",
-                offer="UbuntuServer",
-                sku="18.04-LTS",
+                publisher="canonical",
+                offer="0001-com-ubuntu-server-focal",
+                sku="20_04-lts",
                 version="latest"
             ),
-            node_agent_sku_id="batch.node.ubuntu 18.04"),
+            node_agent_sku_id="batch.node.ubuntu 20.04"),
         vm_size=config._POOL_VM_SIZE,
         target_dedicated_nodes=config._POOL_NODE_COUNT
     )
@@ -175,9 +176,9 @@ def create_job(batch_service_client, job_id, pool_id):
     """
     print('Creating job [{}]...'.format(job_id))
 
-    job = batch.models.JobAddParameter(
+    job = batchmodels.JobAddParameter(
         id=job_id,
-        pool_info=batch.models.PoolInformation(pool_id=pool_id))
+        pool_info=batchmodels.PoolInformation(pool_id=pool_id))
 
     batch_service_client.job.add(job)
 
@@ -202,7 +203,7 @@ def add_tasks(batch_service_client, job_id, input_files):
     for idx, input_file in enumerate(input_files):
 
         command = "/bin/bash -c \"cat {}\"".format(input_file.file_path)
-        tasks.append(batch.models.TaskAddParameter(
+        tasks.append(batchmodels.TaskAddParameter(
             id='Task{}'.format(idx),
             command_line=command,
             resource_files=[input_file]
@@ -247,7 +248,8 @@ def wait_for_tasks_to_complete(batch_service_client, job_id, timeout):
 
 
 def print_task_output(batch_service_client, job_id, encoding=None):
-    """Prints the stdout.txt file for each task in the job.
+    """
+    Prints the stdout.txt file for each task in the job.
 
     :param batch_client: The batch client to use.
     :type batch_client: `batchserviceclient.BatchServiceClient`
@@ -276,7 +278,8 @@ def print_task_output(batch_service_client, job_id, encoding=None):
 
 
 def _read_stream_as_string(stream, encoding):
-    """Read stream as string
+    """
+    Read stream as string
 
     :param stream: input stream generator
     :param str encoding: The encoding of the file. The default is utf-8.
@@ -292,7 +295,6 @@ def _read_stream_as_string(stream, encoding):
         return output.getvalue().decode(encoding)
     finally:
         output.close()
-    raise RuntimeError('could not write data to stream or decode bytes')
 
 
 if __name__ == '__main__':
@@ -303,16 +305,21 @@ if __name__ == '__main__':
 
     # Create the blob client, for use in obtaining references to
     # blob storage containers and uploading files to containers.
-
-    blob_client = azureblob.BlockBlobService(
-        account_name=config._STORAGE_ACCOUNT_NAME,
-        account_key=config._STORAGE_ACCOUNT_KEY)
+    blob_service_client = BlobServiceClient(
+        account_url="https://{}.{}/".format(
+            config._STORAGE_ACCOUNT_NAME,
+            config._STORAGE_ACCOUNT_DOMAIN
+        ),
+        credential=config._STORAGE_ACCOUNT_KEY
+    )
 
     # Use the blob client to create the containers in Azure Storage if they
     # don't yet exist.
-
     input_container_name = 'input'
-    blob_client.create_container(input_container_name, fail_on_exist=False)
+    try:
+        blob_service_client.create_container(input_container_name)
+    except ResourceExistsError:
+        pass
 
     # The collection of data files that are to be processed by the tasks.
     input_file_paths = [os.path.join(sys.path[0], 'taskdata0.txt'),
@@ -321,15 +328,15 @@ if __name__ == '__main__':
 
     # Upload the data files.
     input_files = [
-        upload_file_to_container(blob_client, input_container_name, file_path)
+        upload_file_to_container(blob_service_client, input_container_name, file_path)
         for file_path in input_file_paths]
 
     # Create a Batch service client. We'll now be interacting with the Batch
     # service in addition to Storage
-    credentials = batch_auth.SharedKeyCredentials(config._BATCH_ACCOUNT_NAME,
-                                                  config._BATCH_ACCOUNT_KEY)
+    credentials = SharedKeyCredentials(config._BATCH_ACCOUNT_NAME,
+        config._BATCH_ACCOUNT_KEY)
 
-    batch_client = batch.BatchServiceClient(
+    batch_client = BatchServiceClient(
         credentials,
         batch_url=config._BATCH_ACCOUNT_URL)
 
@@ -361,7 +368,7 @@ if __name__ == '__main__':
 
     # Clean up storage resources
     print('Deleting container [{}]...'.format(input_container_name))
-    blob_client.delete_container(input_container_name)
+    blob_service_client.delete_container(input_container_name)
 
     # Print out some timing info
     end_time = datetime.datetime.now().replace(microsecond=0)
