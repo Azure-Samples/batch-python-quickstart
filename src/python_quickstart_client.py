@@ -1,14 +1,9 @@
-from __future__ import print_function
 import datetime
 import io
 import os
 import sys
 import time
 import config
-try:
-    input = raw_input
-except NameError:
-    pass
 
 from azure.core.exceptions import ResourceExistsError
 
@@ -21,9 +16,6 @@ from azure.storage.blob import (
 from azure.batch import BatchServiceClient
 from azure.batch.batch_auth import SharedKeyCredentials
 import azure.batch.models as batchmodels
-
-sys.path.append('.')
-sys.path.append('..')
 
 
 # Update the Batch and Storage account credential strings in config.py with values
@@ -259,7 +251,8 @@ def wait_for_tasks_to_complete(batch_service_client, job_id, timeout):
 
 
 def print_task_output(batch_service_client, job_id, encoding=None):
-    """Prints the stdout.txt file for each task in the job.
+    """
+    Prints the stdout.txt file for each task in the job.
 
     :param batch_client: The batch client to use.
     :type batch_client: `batchserviceclient.BatchServiceClient`
@@ -288,7 +281,8 @@ def print_task_output(batch_service_client, job_id, encoding=None):
 
 
 def _read_stream_as_string(stream, encoding):
-    """Read stream as string
+    """
+    Read stream as string
 
     :param stream: input stream generator
     :param str encoding: The encoding of the file. The default is utf-8.
