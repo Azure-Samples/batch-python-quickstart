@@ -46,7 +46,7 @@ from azure.core.exceptions import ResourceExistsError
 
 import config
 
-
+DEFAULT_ENCODING = "utf-8"
 
 
 # Update the Batch and Storage account credential strings in config.py with values
@@ -270,7 +270,7 @@ def wait_for_tasks_to_complete(batch_service_client: BatchServiceClient, job_id:
                        "timeout period of " + str(timeout))
 
 
-def print_task_output(batch_service_client: BatchServiceClient, job_id: str, encoding: str=None):
+def print_task_output(batch_service_client: BatchServiceClient, job_id: str, text_encoding: str=None):
     """
     Prints the stdout.txt file for each task in the job.
 
@@ -294,7 +294,14 @@ def print_task_output(batch_service_client: BatchServiceClient, job_id: str, enc
 
         file_text = _read_stream_as_string(
             stream,
-            encoding)
+            text_encoding)
+
+        if text_encoding is None:
+            text_encoding = DEFAULT_ENCODING
+        
+        sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = text_encoding)
+        sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = text_encoding)
+
         print("Standard output:")
         print(file_text)
 
@@ -312,7 +319,7 @@ def _read_stream_as_string(stream, encoding) -> str:
         for data in stream:
             output.write(data)
         if encoding is None:
-            encoding = 'utf-8'
+            encoding = DEFAULT_ENCODING
         return output.getvalue().decode(encoding)
     finally:
         output.close()
@@ -380,28 +387,29 @@ if __name__ == '__main__':
         # Print the stdout.txt and stderr.txt files for each task to the console
         print_task_output(batch_client, config.JOB_ID)
 
+        # Print out some timing info
+        end_time = datetime.datetime.now().replace(microsecond=0)
+        print()
+        print(f'Sample end: {end_time}')
+        elapsed_time = end_time - start_time
+        print(f'Elapsed time: {elapsed_time}')
+        print()
+        input('Press ENTER to exit...')
+        
     except batchmodels.BatchErrorException as err:
         print_batch_exception(err)
         raise
 
-    # Clean up storage resources
-    print(f'Deleting container [{input_container_name}]...')
-    blob_service_client.delete_container(input_container_name)
+    finally:
+      # Clean up storage resources
+        print(f'Deleting container [{input_container_name}]...')
+        blob_service_client.delete_container(input_container_name)
 
-    # Print out some timing info
-    end_time = datetime.datetime.now().replace(microsecond=0)
-    print()
-    print(f'Sample end: {end_time}')
-    elapsed_time = end_time - start_time
-    print(f'Elapsed time: {elapsed_time}')
-    print()
+        # Clean up Batch resources (if the user so chooses).
+        if query_yes_no('Delete job?') == 'yes':
+            batch_client.job.delete(config.JOB_ID)
 
-    # Clean up Batch resources (if the user so chooses).
-    if query_yes_no('Delete job?') == 'yes':
-        batch_client.job.delete(config.JOB_ID)
+        if query_yes_no('Delete pool?') == 'yes':
+            batch_client.pool.delete(config.POOL_ID)  
 
-    if query_yes_no('Delete pool?') == 'yes':
-        batch_client.pool.delete(config.POOL_ID)
-
-    print()
-    input('Press ENTER to exit...')
+ 
