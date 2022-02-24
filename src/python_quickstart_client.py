@@ -222,7 +222,7 @@ def add_tasks(batch_service_client: BatchServiceClient, job_id: str, resource_in
 
     print(f'Adding {resource_input_files} tasks to job [{job_id}]...')
 
-    tasks = list()
+    tasks = []
 
     for idx, input_file in enumerate(resource_input_files):
 
@@ -237,7 +237,7 @@ def add_tasks(batch_service_client: BatchServiceClient, job_id: str, resource_in
     batch_service_client.task.add_collection(job_id, tasks)
 
 
-def wait_for_tasks_to_complete(batch_service_client: BatchServiceClient, job_id: str, 
+def wait_for_tasks_to_complete(batch_service_client: BatchServiceClient, job_id: str,
                                timeout: datetime.timedelta):
     """
     Returns when all tasks in the specified job reach the Completed state.
@@ -270,7 +270,8 @@ def wait_for_tasks_to_complete(batch_service_client: BatchServiceClient, job_id:
                        "timeout period of " + str(timeout))
 
 
-def print_task_output(batch_service_client: BatchServiceClient, job_id: str, text_encoding: str=None):
+def print_task_output(batch_service_client: BatchServiceClient, job_id: str,
+                      text_encoding: str=None):
     """
     Prints the stdout.txt file for each task in the job.
 
@@ -298,7 +299,7 @@ def print_task_output(batch_service_client: BatchServiceClient, job_id: str, tex
 
         if text_encoding is None:
             text_encoding = DEFAULT_ENCODING
-        
+
         sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = text_encoding)
         sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = text_encoding)
 
@@ -328,7 +329,7 @@ def _read_stream_as_string(stream, encoding) -> str:
 if __name__ == '__main__':
 
     start_time = datetime.datetime.now().replace(microsecond=0)
-    print('Sample start: {}'.format(start_time))
+    print(f'Sample start: {start_time}')
     print()
 
     # Create the blob client, for use in obtaining references to
@@ -340,7 +341,7 @@ if __name__ == '__main__':
 
     # Use the blob client to create the containers in Azure Storage if they
     # don't yet exist.
-    input_container_name = 'input'
+    input_container_name = 'input'      # pylint: disable=invalid-name
     try:
         blob_service_client.create_container(input_container_name)
     except ResourceExistsError:
@@ -395,7 +396,7 @@ if __name__ == '__main__':
         print(f'Elapsed time: {elapsed_time}')
         print()
         input('Press ENTER to exit...')
-        
+
     except batchmodels.BatchErrorException as err:
         print_batch_exception(err)
         raise
@@ -410,6 +411,5 @@ if __name__ == '__main__':
             batch_client.job.delete(config.JOB_ID)
 
         if query_yes_no('Delete pool?') == 'yes':
-            batch_client.pool.delete(config.POOL_ID)  
-
+            batch_client.pool.delete(config.POOL_ID)
  

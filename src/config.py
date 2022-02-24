@@ -14,7 +14,12 @@
 # Global constant variables (Azure Storage account/Batch details)
 
 # import "config.py" in "python_quickstart_client.py "
-# Please note that storing the batch and storage account keys in Azure Key Vault is a better practice for Production usage.
+# Please note that storing the batch and storage account keys in Azure Key Vault
+# is a better practice for Production usage.
+
+"""
+Configure Batch and Storage Account credentials
+"""
 
 BATCH_ACCOUNT_NAME = ''  # Your batch account name
 BATCH_ACCOUNT_KEY = ''  # Your batch account key
