@@ -30,6 +30,8 @@ STORAGE_ACCOUNT_DOMAIN = 'blob.core.windows.net' # Your storage account blob ser
 
 POOL_ID = 'PythonQuickstartPool'  # Your Pool ID
 POOL_NODE_COUNT = 2  # Pool node count
-POOL_VM_SIZE = 'STANDARD_DS1_V2'  # VM Type/Size
+#POOL_VM_SIZE = 'STANDARD_DS1_V2'  # VM Type/Size (original, not available in some initial subscriptions)
+POOL_VM_SIZE = 'STANDARD_D2_v3'  # VM Type/Size. Check Quota tab to be sure this is available.
+# https://learn.microsoft.com/en-us/azure/virtual-machines/dv3-dsv3-series
 JOB_ID = 'PythonQuickstartJob'  # Job ID
 STANDARD_OUT_FILE_NAME = 'stdout.txt'  # Standard Output file
